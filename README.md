@@ -2,6 +2,23 @@
 
 > Rainwater Labs Internship Assignment — Built by Astha
 
+## Screenshots
+
+### Gallery View
+![Gallery](screenshots/Gallery.png)
+
+### Import Tab
+![Import](screenshots/Import.png)
+
+### Duplicate Detection
+![Duplicates](screenshots/Duplicates.png)
+
+### Activity Log
+![Logs](screenshots/logs.png)
+
+### Export Tab
+![Export](screenshots/export.png)
+
 A clean, local web tool to **import, review, tag, deduplicate, and export** image datasets. No cloud accounts needed — everything runs on your machine.
 
 ---
