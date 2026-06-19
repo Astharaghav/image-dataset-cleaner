@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Database and logs
+db/review.db
+db/activity.log
+
+# Uploaded images
+uploads/
+
+# VS Code settings
+.vscode/
+
+# Windows files
+Thumbs.db
+desktop.ini
+
+# Mac files
+.DS_Store

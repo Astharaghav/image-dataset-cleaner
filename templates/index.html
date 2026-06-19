@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CleanSet — Image Dataset Reviewer</title>
+<link rel="stylesheet" href="/static/style.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 5h16M4 12h16M4 19h10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="19" cy="19" r="3" fill="#a5b4fc"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">CleanSet</div>
+      <div class="brand-sub">Dataset Reviewer</div>
+    </div>
+  </div>
+
+  <!-- Stats pills -->
+  <div class="stats-section">
+    <div class="stats-label">Overview</div>
+    <div class="stats-grid">
+      <div class="stat-pill total">
+        <span class="stat-num" id="s-total">0</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="stat-pill keep">
+        <span class="stat-num" id="s-keep">0</span>
+        <span class="stat-lbl">Keep</span>
+      </div>
+      <div class="stat-pill reject">
+        <span class="stat-num" id="s-reject">0</span>
+        <span class="stat-lbl">Reject</span>
+      </div>
+      <div class="stat-pill review">
+        <span class="stat-num" id="s-review">0</span>
+        <span class="stat-lbl">Review</span>
+      </div>
+    </div>
+    <!-- progress bar -->
+    <div class="review-progress" id="review-progress" style="display:none">
+      <div class="rp-bar">
+        <div class="rp-fill keep-fill" id="rp-keep"></div>
+        <div class="rp-fill reject-fill" id="rp-reject"></div>
+      </div>
+      <div class="rp-legend">
+        <span class="dot keep"></span> Keep &nbsp;
+        <span class="dot reject"></span> Reject &nbsp;
+        <span class="dot review"></span> Review
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav-section">
+    <div class="nav-label">Views</div>
+    <button class="nav-btn active" data-tab="gallery" onclick="switchTab('gallery',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>
+      Gallery
+    </button>
+    <button class="nav-btn" data-tab="import" onclick="switchTab('import',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Import
+      <span class="nav-badge" id="import-badge" style="display:none">New</span>
+    </button>
+    <button class="nav-btn" data-tab="duplicates" onclick="switchTab('duplicates',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><rect x="8" y="8" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/></svg>
+      Duplicates
+    </button>
+    <button class="nav-btn" data-tab="logs" onclick="switchTab('logs',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Activity Log
+    </button>
+  </nav>
+
+  <!-- Filter -->
+  <div class="nav-section">
+    <div class="nav-label">Filter by Status</div>
+    <button class="filter-btn active" data-status="" onclick="setFilter('',this)">All Images</button>
+    <button class="filter-btn keep-filter" data-status="keep" onclick="setFilter('keep',this)">✓ Keep</button>
+    <button class="filter-btn reject-filter" data-status="reject" onclick="setFilter('reject',this)">✕ Reject</button>
+    <button class="filter-btn review-filter" data-status="needs_review" onclick="setFilter('needs_review',this)">? Needs Review</button>
+  </div>
+
+  <!-- Export -->
+  <div class="nav-section">
+    <div class="nav-label">Export</div>
+    <button class="export-btn" onclick="exportData('csv')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export CSV
+    </button>
+    <button class="export-btn" onclick="exportData('json')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export JSON
+    </button>
+    <button class="export-btn" onclick="exportData('zip')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ZIP (keep only)
+    </button>
+  </div>
+
+  <div class="sidebar-foot">
+    <span>🌧 Rainwater Labs</span>
+    <span id="size-info" style="color:var(--text-muted);font-size:10px"></span>
+  </div>
+</aside>
+
+<!-- ── Main Area ─────────────────────────────────────────────── -->
+<div class="app-body">
+
+  <!-- ══ GALLERY TAB ══════════════════════════════════════════ -->
+  <div id="tab-gallery" class="tab active">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Image Gallery</h1>
+        <p class="page-sub" id="gallery-sub">Loading your dataset…</p>
+      </div>
+      <div class="header-actions">
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="search" class="search-input" type="text" placeholder="Search images, tags, notes…" oninput="debounceLoad()"/>
+        </div>
+        <div class="view-btns">
+          <button class="vbtn active" id="vt-grid" onclick="setView('grid')" title="Grid view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+          <button class="vbtn" id="vt-table" onclick="setView('table')" title="Table view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch bar (shows when items selected) -->
+    <div class="batch-bar" id="batch-bar" style="display:none">
+      <div class="batch-info">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3 8-8M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="batch-count">0 selected</span>
+      </div>
+      <div class="batch-actions">
+        <button class="bb-btn keep-btn" onclick="batchAction('keep')">✓ Keep</button>
+        <button class="bb-btn reject-btn" onclick="batchAction('reject')">✕ Reject</button>
+        <button class="bb-btn review-btn" onclick="batchAction('needs_review')">? Review</button>
+        <button class="bb-btn delete-btn" onclick="batchAction('delete')">🗑 Delete</button>
+        <button class="bb-clear" onclick="clearSelection()">✕</button>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div id="grid-view" class="gallery-grid"></div>
+
+    <!-- Table -->
+    <div id="table-view" style="display:none">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"/></th>
+              <th style="width:60px">Preview</th>
+              <th>Filename</th>
+              <th>Type</th>
+              <th>Size</th>
+              <th>Dimensions</th>
+              <th>Status</th>
+              <th>Tags</th>
+              <th style="width:140px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state" style="display:none">
+      <div class="empty-art">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <rect x="10" y="10" width="60" height="60" rx="12" fill="var(--surface2)"/>
+          <rect x="20" y="20" width="18" height="18" rx="4" fill="var(--border)"/>
+          <rect x="42" y="20" width="18" height="18" rx="4" fill="var(--border)"/>
+          <rect x="20" y="42" width="18" height="18" rx="4" fill="var(--border)"/>
+          <rect x="42" y="42" width="18" height="18" rx="4" fill="var(--border)"/>
+        </svg>
+      </div>
+      <h3>No images here yet</h3>
+      <p>Import some images to get started with your dataset review.</p>
+      <button class="btn-primary" onclick="switchTab('import', document.querySelector('[data-tab=import]'))">Go to Import</button>
+    </div>
+  </div>
+
+  <!-- ══ IMPORT TAB ════════════════════════════════════════════ -->
+  <div id="tab-import" class="tab">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Import Images</h1>
+        <p class="page-sub">Add images to your dataset from multiple sources</p>
+      </div>
+    </div>
+
+    <div class="import-grid">
+
+      <!-- Drop zone -->
+      <div class="import-card featured" id="drop-card">
+        <div class="import-card-header">
+          <div class="import-icon-wrap purple">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8-4-4m0 0L8 8m4-4v12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h3>Upload Files</h3>
+            <p>JPG, PNG, GIF, WebP, BMP, TIFF</p>
+          </div>
+        </div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="dz-inner">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M7 16a4 4 0 0 1-.88-7.903A5 5 0 1 1 15.9 6L16 6a5 5 0 0 1 1 9.9M15 13l-3-3m0 0-3 3m3-3v12" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="dz-text">Drop images here</span>
+            <span class="dz-sub">or click to browse your computer</span>
+          </div>
+          <input type="file" id="file-input" multiple accept="image/*" onchange="uploadFiles(this.files)" style="display:none"/>
+        </div>
+      </div>
+
+      <!-- ZIP -->
+      <div class="import-card">
+        <div class="import-card-header">
+          <div class="import-icon-wrap orange">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM4 7V5a2 2 0 0 1 2-2h4l2 2h8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h3>Upload ZIP</h3>
+            <p>Extract all images from a ZIP archive</p>
+          </div>
+        </div>
+        <label class="upload-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8-4-4m0 0L8 8m4-4v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Choose ZIP File
+          <input type="file" id="zip-input" accept=".zip" onchange="uploadZip(this)" style="display:none"/>
+        </label>
+      </div>
+
+      <!-- URLs -->
+      <div class="import-card">
+        <div class="import-card-header">
+          <div class="import-icon-wrap blue">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <h3>Image URLs</h3>
+            <p>One URL per line — we'll download them</p>
+          </div>
+        </div>
+        <textarea id="url-input" class="url-textarea" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.png&#10;…"></textarea>
+        <button class="btn-primary" onclick="importURLs()">Fetch Images</button>
+      </div>
+
+      <!-- Scrape -->
+      <div class="import-card">
+        <div class="import-card-header">
+          <div class="import-icon-wrap green">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="white" stroke-width="2"/></svg>
+          </div>
+          <div>
+            <h3>Scrape a Page</h3>
+            <p>Extract all images from any public URL</p>
+          </div>
+        </div>
+        <div class="input-with-btn">
+          <input type="text" id="scrape-url" class="text-input" placeholder="https://example.com/gallery"/>
+          <button class="btn-primary" onclick="scrapePage()">Scrape</button>
+        </div>
+        <div id="scrape-preview" class="scrape-preview" style="display:none"></div>
+      </div>
+
+      <!-- CSV -->
+      <div class="import-card">
+        <div class="import-card-header">
+          <div class="import-icon-wrap teal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="13" x2="8" y2="13" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h3>Import from CSV</h3>
+            <p>Column named <code>url</code>, <code>image_url</code>, or <code>src</code></p>
+          </div>
+        </div>
+        <label class="upload-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8-4-4m0 0L8 8m4-4v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Choose CSV File
+          <input type="file" id="csv-input" accept=".csv" onchange="importCSV(this)" style="display:none"/>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- Progress -->
+    <div id="import-progress" style="display:none" class="import-progress-block">
+      <div class="ipb-top">
+        <span id="progress-label">Importing…</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <!-- Results -->
+    <div id="import-results"></div>
+  </div>
+
+  <!-- ══ DUPLICATES TAB ════════════════════════════════════════ -->
+  <div id="tab-duplicates" class="tab">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Duplicate Detector</h1>
+        <p class="page-sub">Finds exact copies (MD5) and visually similar images (perceptual hash)</p>
+      </div>
+      <button class="btn-primary" onclick="loadDuplicates()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="white" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        Scan Now
+      </button>
+    </div>
+
+    <div class="how-it-works">
+      <div class="hiw-item">
+        <div class="hiw-icon" style="background:rgba(99,102,241,.15);color:#818cf8">MD5</div>
+        <div>
+          <strong>Exact Duplicates</strong>
+          <span>Blocked at import — same file byte-for-byte</span>
+        </div>
+      </div>
+      <div class="hiw-item">
+        <div class="hiw-icon" style="background:rgba(245,158,11,.15);color:#f59e0b">pHash</div>
+        <div>
+          <strong>Near Duplicates</strong>
+          <span>Visually similar images (resized, compressed, slightly edited)</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="dup-results"></div>
+  </div>
+
+  <!-- ══ LOGS TAB ══════════════════════════════════════════════ -->
+  <div id="tab-logs" class="tab">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Activity Log</h1>
+        <p class="page-sub">Every import, edit, and export action recorded automatically</p>
+      </div>
+      <button class="btn-outline" onclick="loadLogs()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Refresh
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>#</th><th>Time</th><th>Action</th><th>Details</th></tr>
+        </thead>
+        <tbody id="log-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end app-body -->
+
+<!-- ══ IMAGE DETAIL MODAL ════════════════════════════════════════ -->
+<div id="modal" class="modal-backdrop" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-layout">
+      <div class="modal-preview">
+        <img id="modal-img" src="" alt=""/>
+        <div class="modal-img-actions">
+          <a id="modal-open-link" href="#" target="_blank" class="img-action-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Open full size
+          </a>
+        </div>
+      </div>
+      <div class="modal-panel">
+        <h3 id="modal-title" class="modal-filename"></h3>
+
+        <div class="meta-chips" id="modal-meta"></div>
+
+        <div class="panel-section">
+          <div class="panel-label">Status</div>
+          <div class="status-row" id="modal-status-btns"></div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-label">Tags <span class="panel-hint">comma separated</span></div>
+          <input type="text" id="modal-tags" class="panel-input" placeholder="e.g. outdoor, high-res, product"/>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-label">Notes</div>
+          <textarea id="modal-notes" class="panel-textarea" placeholder="Add any notes about this image…"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn-primary" onclick="saveModal()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast">
+  <span id="toast-icon"></span>
+  <span id="toast-msg"></span>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
